@@ -1,19 +1,26 @@
 package com.iview.advertisinglogo;
 
+import android.content.Context;
+
 public class AdObjectDetect {
+
+    public final static int ERROR_INIT_FAIL = -1;
+
+    public Context mContext;
 
     IDetectCallback detectCallback;
     IStateCallback stateCallback;
 
-    private void init(IStateCallback stateCallback) {
+    public void init(IStateCallback stateCallback, Context context) {
         this.stateCallback = stateCallback;
+        mContext = context;
     }
 
-    private void open(IDetectCallback detectCallback) {
+    public void open(IDetectCallback detectCallback) {
         this.detectCallback = detectCallback;
     }
 
-    private void sendImageData(byte[] data, int dataType, int width, int height) {
+    public void sendImageData(byte[] data, int dataType, int width, int height) {
 
     }
 

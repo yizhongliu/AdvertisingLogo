@@ -6,31 +6,50 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Size;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 
 import com.iview.advertisinglogo.AdCamera;
+import com.iview.advertisinglogo.AdObjectDetect;
 import com.iview.advertisinglogo.AndroidCamera2;
+import com.iview.advertisinglogo.AutoFitSurfaceView;
+import com.iview.advertisinglogo.DetectResult;
 import com.iview.advertisinglogo.HIKvisionCamera;
+import com.iview.advertisinglogo.IDataCallback;
+import com.iview.advertisinglogo.IDetectCallback;
 import com.iview.advertisinglogo.IStateCallback;
+import com.iview.advertisinglogo.OverlayView;
 import com.iview.advertisinglogo.R;
+import com.iview.advertisinglogo.rkdetect.RkObjectDetect;
 
 public class HiCameraView extends Activity{
     private final static String TAG = "HiCameraView";
 
     AdCamera adCamera;
     CameraStateCallback cameraStateCallback;
+    CameraDataCallback cameraDataCallback;
 
-    SurfaceView surfaceView;
+    AutoFitSurfaceView surfaceView;
     SurfaceHolder surfaceHolder;
+
+    private int previewWidth;
+    private int previewHeight;
+
+    OverlayView overlayView;
+
+    AdObjectDetect objectDetect;
+    DetectStateCallback detectStateCallback;
+    DetectResultCallback detectResultCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
+        initData();
         initView();
     }
 
@@ -65,6 +84,20 @@ public class HiCameraView extends Activity{
         }
     }
 
+    private void initData() {
+        Log.e(TAG, "initData");
+        //采用屏幕的宽高, 全屏显示
+        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics dm = new DisplayMetrics();
+        windowManager.getDefaultDisplay().getRealMetrics(dm);
+
+        previewWidth = dm.widthPixels;
+        previewHeight = dm.heightPixels;
+
+
+        initObjectDetect();
+    }
+
     public void initView() {
         surfaceView = findViewById(R.id.cameraSurface);
 
@@ -86,23 +119,27 @@ public class HiCameraView extends Activity{
 
             }
         });
+
+        overlayView = findViewById(R.id.overlayView);
+    }
+
+    public void initObjectDetect() {
+        objectDetect = new RkObjectDetect();
+
+        detectStateCallback = new DetectStateCallback();
+        objectDetect.init(detectStateCallback, this);
+
+        detectResultCallback = new DetectResultCallback();
+        objectDetect.open(detectResultCallback);
     }
 
     public void initCamera() {
-
-        //采用屏幕的宽高
-        WindowManager windowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics dm = new DisplayMetrics();
-        windowManager.getDefaultDisplay().getRealMetrics(dm);
-
-        int width = dm.widthPixels;
-        int height = dm.heightPixels;
 
         cameraStateCallback = new CameraStateCallback();
       //  adCamera = new HIKvisionCamera();
         adCamera = new AndroidCamera2();
         adCamera.init(cameraStateCallback, this);
-        adCamera.open(width, height);
+        adCamera.open();
     }
 
     class CameraStateCallback implements IStateCallback {
@@ -110,12 +147,61 @@ public class HiCameraView extends Activity{
         @Override
         public void onOpened() {
             Log.d(TAG, "onOpened");
+
+            Size chooseSize = adCamera.chooseOptimalSize(previewWidth, previewHeight);
+            if (chooseSize != null) {
+                previewWidth = chooseSize.getWidth();
+                previewHeight = chooseSize.getHeight();
+            }
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    surfaceView.setAspectRatio(previewWidth, previewHeight);
+                    Log.e(TAG, "setAspectRatio width:" + previewWidth + ", height:" + previewHeight);
+                }
+            });
+
+
             adCamera.setSurface(surfaceHolder);
-            adCamera.startPreview(null);
+
+            cameraDataCallback = new CameraDataCallback();
+            adCamera.startPreview(cameraDataCallback);
         }
 
         @Override
         public void onError(int error) {
+
+        }
+    }
+
+    class CameraDataCallback implements IDataCallback {
+
+        @Override
+        public void onDataCallback(byte[] data, int dataType, int width, int height) {
+            Log.e(TAG, "onDataCallbakck  dataType:" + dataType + ", width:" + width + ", height:" + height);
+            objectDetect.sendImageData(data, dataType, width, height);
+        }
+    }
+
+    class DetectStateCallback implements IStateCallback {
+
+        @Override
+        public void onOpened() {
+
+        }
+
+        @Override
+        public void onError(int error) {
+            Log.e(TAG, "DetectStateCallback onError:" + error);
+            finish();
+        }
+    }
+
+    class DetectResultCallback implements IDetectCallback {
+
+        @Override
+        public void onDetectResult(DetectResult result) {
 
         }
     }

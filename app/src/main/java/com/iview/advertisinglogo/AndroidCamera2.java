@@ -18,6 +18,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
@@ -41,7 +42,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 public class AndroidCamera2 extends AdCamera {
-    private final static String TAG = "AndroidCamera";
+    private final static String TAG = "AndroidCamera2";
 
     /**
      * Camera state: Showing camera preview.
@@ -68,21 +69,9 @@ public class AndroidCamera2 extends AdCamera {
      */
     private static final int STATE_PICTURE_TAKEN = 4;
 
-    /**
-     * Max preview width that is guaranteed by Camera2 API
-     */
-    private static final int MAX_PREVIEW_WIDTH = 1920;
-
-    /**
-     * Max preview height that is guaranteed by Camera2 API
-     */
-    private static final int MAX_PREVIEW_HEIGHT = 1080;
 
     String mCameraId;
     Surface surface;
-
-    int mWidth;
-    int mHeight;
 
     /**
      * The current state of camera state for taking pictures.
@@ -113,11 +102,6 @@ public class AndroidCamera2 extends AdCamera {
     private CameraDevice mCameraDevice;
 
     /**
-     * The {@link android.util.Size} of camera preview.
-     */
-    private Size mPreviewSize;
-
-    /**
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
     private Semaphore mCameraOpenCloseLock = new Semaphore(1);
@@ -146,25 +130,16 @@ public class AndroidCamera2 extends AdCamera {
     public void init(IStateCallback callback, Context context) {
         super.init(callback, context);
 
-        //采用屏幕的宽高
-        WindowManager windowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
-        DisplayMetrics dm = new DisplayMetrics();
-        windowManager.getDefaultDisplay().getRealMetrics(dm);
-
-        mWidth = dm.widthPixels;
-        mHeight = dm.heightPixels;
-
-
         //选择获取到的第一个camera
         mCameraId = chooseCamera();
     }
 
     @SuppressLint("MissingPermission")
     @Override
-    public void open(int width, int height) {
+    public void open() {
         startBackgroundThread();
 
-        setUpCameraOutputs(width, height);
+   //     setUpCameraOutputs(width, height);
 
         CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
@@ -277,70 +252,6 @@ public class AndroidCamera2 extends AdCamera {
         return null;
     }
 
-    @SuppressWarnings("SuspiciousNameCombination")
-    private void setUpCameraOutputs(int width, int height) {
-        CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
-        try {
-            CameraCharacteristics characteristics
-                    = manager.getCameraCharacteristics(mCameraId);
-
-
-            //获取图片输出的尺寸和预览画面输出的尺寸
-            StreamConfigurationMap map = characteristics.get(
-                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-            if (map == null) {
-                Log.e(TAG, "StreamConfigurationMap is empty");
-                stateCallback.onError(ERROR_CAPABILITY_UNSUPPORT);
-                return;
-            }
-
-            // For still image captures, we use the largest available size.
-            Size largest = Collections.max(
-                    Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
-                    new CompareSizesByArea());
-            mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
-                    ImageFormat.JPEG, /*maxImages*/2);
-            mImageReader.setOnImageAvailableListener(
-                    mOnImageAvailableListener, mBackgroundHandler);
-
-
-            int rotatedPreviewWidth = width;
-            int rotatedPreviewHeight = height;
-            int maxPreviewWidth = mWidth;
-            int maxPreviewHeight = mHeight;
-
-
-            // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
-            // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
-            // garbage capture data.
-            mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
-                    rotatedPreviewWidth, rotatedPreviewHeight, maxPreviewWidth,
-                    maxPreviewHeight, largest);
-
-            return;
-
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        } catch (NullPointerException e) {
-            // Currently an NPE is thrown when the Camera2API is used but not supported on the
-            // device this code runs.
-
-        }
-    }
-
-    /**
-     * Compares two {@code Size}s based on their areas.
-     */
-    static class CompareSizesByArea implements Comparator<Size> {
-
-        @Override
-        public int compare(Size lhs, Size rhs) {
-            // We cast here to ensure the multiplications won't overflow
-            return Long.signum((long) lhs.getWidth() * lhs.getHeight() -
-                    (long) rhs.getWidth() * rhs.getHeight());
-        }
-    }
-
     /**
      * Starts a background thread and its {@link Handler}.
      */
@@ -373,58 +284,18 @@ public class AndroidCamera2 extends AdCamera {
 
         @Override
         public void onImageAvailable(ImageReader reader) {
-            mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
+
+            //https://blog.csdn.net/liang9zi/article/details/79296828
+            //Image类的解析
+            final Image image = reader.acquireLatestImage();
+
+            if (image == null) {
+                return;
+            }
+
+
         }
     };
-
-    /**
-     * Given {@code choices} of {@code Size}s supported by a camera, choose the smallest one that
-     * is at least as large as the respective texture view size, and that is at most as large as the
-     * respective max size, and whose aspect ratio matches with the specified value. If such size
-     * doesn't exist, choose the largest one that is at most as large as the respective max size,
-     * and whose aspect ratio matches with the specified value.
-     *
-     * @param choices           The list of sizes that the camera supports for the intended output
-     *                          class
-     * @param textureViewWidth  The width of the texture view relative to sensor coordinate
-     * @param textureViewHeight The height of the texture view relative to sensor coordinate
-     * @param maxWidth          The maximum width that can be chosen
-     * @param maxHeight         The maximum height that can be chosen
-     * @param aspectRatio       The aspect ratio
-     * @return The optimal {@code Size}, or an arbitrary one if none were big enough
-     */
-    private static Size chooseOptimalSize(Size[] choices, int textureViewWidth,
-                                          int textureViewHeight, int maxWidth, int maxHeight, Size aspectRatio) {
-
-        // Collect the supported resolutions that are at least as big as the preview Surface
-        List<Size> bigEnough = new ArrayList<>();
-        // Collect the supported resolutions that are smaller than the preview Surface
-        List<Size> notBigEnough = new ArrayList<>();
-        int w = aspectRatio.getWidth();
-        int h = aspectRatio.getHeight();
-        for (Size option : choices) {
-            if (option.getWidth() <= maxWidth && option.getHeight() <= maxHeight &&
-                    option.getHeight() == option.getWidth() * h / w) {
-                if (option.getWidth() >= textureViewWidth &&
-                        option.getHeight() >= textureViewHeight) {
-                    bigEnough.add(option);
-                } else {
-                    notBigEnough.add(option);
-                }
-            }
-        }
-
-        // Pick the smallest of those big enough. If there is no one big enough, pick the
-        // largest of those not big enough.
-        if (bigEnough.size() > 0) {
-            return Collections.min(bigEnough, new CompareSizesByArea());
-        } else if (notBigEnough.size() > 0) {
-            return Collections.max(notBigEnough, new CompareSizesByArea());
-        } else {
-            Log.e(TAG, "Couldn't find any suitable preview size");
-            return choices[0];
-        }
-    }
 
 
     /**
@@ -477,10 +348,18 @@ public class AndroidCamera2 extends AdCamera {
     private void createCameraPreviewSession() {
         try {
 
+            //YUV_420_888通常为YUV420Planar排列（手机不同可能会存在差异，目前我用过的几个手机都是这个格式）。
+            // 实际应用中，可以根据采集到的数据中的pixelStride值判断具体的格式，再去做数据转换，其中pixelStride代表行内颜色值间隔
+            mImageReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(),
+                    ImageFormat.YUV_420_888, /*maxImages*/2);
+            mImageReader.setOnImageAvailableListener(
+                    mOnImageAvailableListener, mBackgroundHandler);
+
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            mPreviewRequestBuilder.addTarget(surface);
+            mPreviewRequestBuilder.addTarget(surface);  // 设置预览输出的 Surface
+            mPreviewRequestBuilder.addTarget(mImageReader.getSurface());  //设置预览回调的Surface
 
             // Here, we create a CameraCaptureSession for camera preview.
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
@@ -585,5 +464,48 @@ public class AndroidCamera2 extends AdCamera {
             process(result);
         }
     };
+
+    @Override
+    public Size chooseOptimalSize(int desireWidth, int desireHeight) {
+
+        CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
+        try {
+            CameraCharacteristics characteristics
+                    = manager.getCameraCharacteristics(mCameraId);
+
+
+            //获取图片输出的尺寸和预览画面输出的尺寸
+            StreamConfigurationMap map = characteristics.get(
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            if (map == null) {
+                Log.e(TAG, "StreamConfigurationMap is empty");
+                stateCallback.onError(ERROR_CAPABILITY_UNSUPPORT);
+                return null;
+            }
+
+            // For still image captures, we use the largest available size.
+            Size largest = Collections.max(
+                    Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
+                    new CompareSizesByArea());
+
+
+            // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
+            // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
+            // garbage capture data.
+            mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
+                    desireWidth, desireHeight);
+
+            return mPreviewSize;
+
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
+            // Currently an NPE is thrown when the Camera2API is used but not supported on the
+            // device this code runs.
+
+        }
+        return null;
+    }
+
 
 }

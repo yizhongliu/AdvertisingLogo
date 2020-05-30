@@ -5,12 +5,14 @@ import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.util.Size;
 import android.view.SurfaceHolder;
 
 import com.hikvision.netsdk.HCNetSDK;
 import com.hikvision.netsdk.NET_DVR_DEVICEINFO_V30;
 import com.hikvision.netsdk.NET_DVR_PREVIEWINFO;
 import com.hikvision.netsdk.RealPlayCallBack;
+import com.iview.advertisinglogo.utils.ImageUtils;
 
 import org.MediaPlayer.PlayM4.Player;
 import org.MediaPlayer.PlayM4.PlayerCallBack;
@@ -41,9 +43,8 @@ public class HIKvisionCamera extends AdCamera{
     //登录重试的次数. 海康摄像头上电到初始化完成需要一定的时间, 防止因为摄像头未初始化完成而登录失败.
     private int connectCount = 0;
 
-
-    //FIXME:just for test
     SurfaceHolder holder;
+    Size previewSize = new Size(800, 600);
 
 
     /**
@@ -148,7 +149,7 @@ public class HIKvisionCamera extends AdCamera{
                     //dwBufSize
                     if (dwBuffSize > 0) {
 
-                        if (!Player.getInstance().openStream(m_iPort, bytes, dwBuffSize, 800*600)) {
+                        if (!Player.getInstance().openStream(m_iPort, bytes, dwBuffSize, previewSize.getWidth() * previewSize.getHeight())) {
                             Log.e(TAG, "openStream failed with error code:"
                                     + Player.getInstance().getLastError(m_iPort));
                             break;
@@ -192,9 +193,10 @@ public class HIKvisionCamera extends AdCamera{
         @Override
         public void onDecode(int nPort, byte[] data, int nDataLen, int nWidth,
                              int nHeight, int nFrameTime, int nDataType, int Reserved) {
+            //yv12 image arranged in “Y0-Y1-......””V0-V1....””U0-U1-.....” format
             if (nDataType == T_YV12) {
                 if (dataCallback != null) {
-                    dataCallback.onDataCallback(data, nDataType, nWidth, nHeight);
+                    dataCallback.onDataCallback(data, ImageUtils.YV12, nWidth, nHeight);
                 }
             }
         }
@@ -224,7 +226,7 @@ public class HIKvisionCamera extends AdCamera{
     }
 
     @Override
-    public void open(int width, int height) {
+    public void open() {
         if (cameraState != STATE_INIT) {
             stateCallback.onError(ERROR_STATE_ILLEGAL);
             return;
@@ -355,6 +357,20 @@ public class HIKvisionCamera extends AdCamera{
             return;
         }
         HCNetSDK.getInstance().NET_DVR_Cleanup();
+    }
+
+    @Override
+    public Size chooseOptimalSize(int desireWidth, int desireHeight) {
+
+        // Danger, W.R.! Attempting to use too large a preview size could  exceed the camera
+        // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
+        // garbage capture data.
+        Size[] outputSize = new Size[1];
+        outputSize[0] = previewSize;
+        mPreviewSize = chooseOptimalSize(outputSize,
+                desireWidth, desireHeight);
+
+        return mPreviewSize;
     }
 
 }
