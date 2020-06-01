@@ -8,8 +8,8 @@ public class AdObjectDetect {
 
     public Context mContext;
 
-    IDetectCallback detectCallback;
-    IStateCallback stateCallback;
+    public IDetectCallback detectCallback;
+    public IStateCallback stateCallback;
 
     public void init(IStateCallback stateCallback, Context context) {
         this.stateCallback = stateCallback;

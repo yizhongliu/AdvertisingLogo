@@ -44,7 +44,7 @@ public class HIKvisionCamera extends AdCamera{
     private int connectCount = 0;
 
     SurfaceHolder holder;
-    Size previewSize = new Size(800, 600);
+    Size previewSize = new Size(1280, 720);
 
 
     /**
@@ -193,6 +193,7 @@ public class HIKvisionCamera extends AdCamera{
         @Override
         public void onDecode(int nPort, byte[] data, int nDataLen, int nWidth,
                              int nHeight, int nFrameTime, int nDataType, int Reserved) {
+     //       Log.d(TAG, "on Decode: width:" + nWidth + ", height:" + nHeight);
             //yv12 image arranged in “Y0-Y1-......””V0-V1....””U0-U1-.....” format
             if (nDataType == T_YV12) {
                 if (dataCallback != null) {

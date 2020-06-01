@@ -18,6 +18,7 @@ package com.iview.advertisinglogo;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.view.TextureView;
 
@@ -25,6 +26,7 @@ import android.view.TextureView;
  * A {@link TextureView} that can be adjusted to a specified aspect ratio.
  */
 public class AutoFitSurfaceView extends SurfaceView {
+  private final static String TAG = "AutoFitSurfaceView";
   private int ratioWidth = 0;
   private int ratioHeight = 0;
 
@@ -62,6 +64,7 @@ public class AutoFitSurfaceView extends SurfaceView {
     super.onMeasure(widthMeasureSpec, heightMeasureSpec);
     final int width = MeasureSpec.getSize(widthMeasureSpec);
     final int height = MeasureSpec.getSize(heightMeasureSpec);
+    Log.d(TAG, "onMeasure width:" + width + ", height:" + height);
     if (0 == ratioWidth || 0 == ratioHeight) {
       setMeasuredDimension(width, height);
     } else {

@@ -1,6 +1,7 @@
 package com.iview.advertisinglogo.rkdetect;
 
 import android.content.Context;
+import android.graphics.RectF;
 import android.util.Log;
 
 import com.iview.advertisinglogo.AdObjectDetect;
@@ -50,6 +51,9 @@ public class RkObjectDetect extends AdObjectDetect {
 
     private static boolean bOpencvInit = false;
 
+    int imageWidth;
+    int imageHeight;
+
     static{
         if(OpenCVLoader.initDebug()){
            bOpencvInit = true;
@@ -95,7 +99,9 @@ public class RkObjectDetect extends AdObjectDetect {
                         }
 
                         computingDetection = false;
-                        generateDetectResult(resultObject);
+
+                        detectCallback.onDetectResult(generateDetectResult(resultObject));
+
             //            cameraFrameBufferQueue.setDetectResult(generateDetectResult(resultObject));
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -125,6 +131,10 @@ public class RkObjectDetect extends AdObjectDetect {
             final Mat dst = new Mat();
             Imgproc.cvtColor(mat , dst, Imgproc.COLOR_YUV2BGR_YV12);
 
+            imageWidth = width;
+            imageHeight = height;
+
+            Log.d(TAG, "setImage width:" + imageWidth + "imageHeight :" + imageHeight);
 
             if (!computingDetection ||
                     ((System.currentTimeMillis() - lastDetectTime) > 10000)) {
@@ -175,8 +185,44 @@ public class RkObjectDetect extends AdObjectDetect {
 
 
     List<DetectResult> generateDetectResult(List<Object[]> resultObject) {
+        List<DetectResult> detectResultList = new ArrayList<>();
+//        Log.d(TAG, "generateDetectResult resultObject.size(): " + resultObject.size());
+        if (resultObject.size() == 3) {
+            Object[] boxes = resultObject.get(0);
+            Object[] classes = resultObject.get(1);
+            Object[] scores = resultObject.get(2);
+            int[] boxesShare = (int[]) boxes[ParseData.SHAPE];
+            int[] classesShare = (int[]) classes[ParseData.SHAPE];
+            int[] scoresShare = (int[]) scores[ParseData.SHAPE];
+            float[] boxesData = (float[]) boxes[ParseData.DATA_ARRAY];
+            long[] classesData = (long[]) classes[ParseData.DATA_ARRAY];
+            float[] scoresData = (float[]) scores[ParseData.DATA_ARRAY];
+
+            float[] data_t = new float[boxesShare[1]];
+
+            for (int i = 0; i < boxesShare[0]; i++) {
+                System.arraycopy(boxesData, i * boxesShare[1], data_t, 0, boxesShare[1]);
+
+                float x = data_t[0];
+                float y = data_t[1];
+                float width = data_t[2];
+                float height = data_t[3];
 
 
+                x = x * imageWidth;
+                y = y * imageHeight;
+                width = x + width * imageWidth;
+                height = y + height * imageHeight;
+
+                RectF location = new RectF();
+                location.set(x, y, width, height);
+
+                detectResultList.add(new DetectResult(null, CLASSES[(int)classesData[i]], scoresData[i], location));
+                Log.d(TAG, "generateDetectResult:" + i + " = " + detectResultList.get(i).toString());
+            }
+        }
+
+        return detectResultList;
     }
 
 }

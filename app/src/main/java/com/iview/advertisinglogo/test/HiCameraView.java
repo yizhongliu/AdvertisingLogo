@@ -2,11 +2,18 @@ package com.iview.advertisinglogo.test;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.RectF;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
+import android.util.TypedValue;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -24,9 +31,15 @@ import com.iview.advertisinglogo.IStateCallback;
 import com.iview.advertisinglogo.OverlayView;
 import com.iview.advertisinglogo.R;
 import com.iview.advertisinglogo.rkdetect.RkObjectDetect;
+import com.iview.advertisinglogo.utils.ImageUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class HiCameraView extends Activity{
     private final static String TAG = "HiCameraView";
+
+    private static final float TEXT_SIZE_DIP = 18;
 
     AdCamera adCamera;
     CameraStateCallback cameraStateCallback;
@@ -43,6 +56,15 @@ public class HiCameraView extends Activity{
     AdObjectDetect objectDetect;
     DetectStateCallback detectStateCallback;
     DetectResultCallback detectResultCallback;
+
+    List<DetectResult> detectResultList = new ArrayList<>();
+
+    private final Paint boxPaint = new Paint();
+
+    private float textSizePx;
+    private BorderedText borderedText;
+
+    private Matrix frameToCanvasMatrix;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -121,6 +143,25 @@ public class HiCameraView extends Activity{
         });
 
         overlayView = findViewById(R.id.overlayView);
+        overlayView.addCallback(new OverlayView.DrawCallback() {
+            @Override
+            public void drawCallback(Canvas canvas) {
+                draw(canvas);
+            }
+        });
+
+
+        boxPaint.setColor(Color.RED);
+        boxPaint.setStyle(Paint.Style.STROKE);
+        boxPaint.setStrokeWidth(12.0f);
+        boxPaint.setStrokeCap(Paint.Cap.ROUND);
+        boxPaint.setStrokeJoin(Paint.Join.ROUND);
+        boxPaint.setStrokeMiter(100);
+
+        textSizePx =
+                TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP, TEXT_SIZE_DIP, getResources().getDisplayMetrics());
+        borderedText = new BorderedText(textSizePx);
     }
 
     public void initObjectDetect() {
@@ -136,8 +177,8 @@ public class HiCameraView extends Activity{
     public void initCamera() {
 
         cameraStateCallback = new CameraStateCallback();
-      //  adCamera = new HIKvisionCamera();
-        adCamera = new AndroidCamera2();
+        adCamera = new HIKvisionCamera();
+      //  adCamera = new AndroidCamera2();
         adCamera.init(cameraStateCallback, this);
         adCamera.open();
     }
@@ -179,7 +220,7 @@ public class HiCameraView extends Activity{
 
         @Override
         public void onDataCallback(byte[] data, int dataType, int width, int height) {
-            Log.e(TAG, "onDataCallbakck  dataType:" + dataType + ", width:" + width + ", height:" + height);
+         //   Log.e(TAG, "onDataCallbakck  dataType:" + dataType + ", width:" + width + ", height:" + height);
             objectDetect.sendImageData(data, dataType, width, height);
         }
     }
@@ -201,8 +242,55 @@ public class HiCameraView extends Activity{
     class DetectResultCallback implements IDetectCallback {
 
         @Override
-        public void onDetectResult(DetectResult result) {
+        public void onDetectResult(List<DetectResult> result) {
+            detectResultList = result;
+            Log.e(TAG, "onDetect result:" + detectResultList.size());
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    overlayView.postInvalidate();
+                }
+            });
 
+        }
+    }
+
+    public synchronized void draw(final Canvas canvas) {
+        if (detectResultList == null) {
+            return;
+        }
+
+        final boolean rotated = 0 % 180 == 90;
+        final float multiplier =
+                Math.min(canvas.getHeight() / (float) (rotated ? previewWidth : previewHeight),
+                        canvas.getWidth() / (float) (rotated ? previewHeight : previewWidth));
+        /*
+         * camera preview size 会和 显示的坐标 转换?
+         * */
+        frameToCanvasMatrix =
+                ImageUtils.getTransformationMatrix(
+                        previewWidth,
+                        previewHeight,
+                        (int) (multiplier * (rotated ? previewHeight : previewWidth)),
+                        (int) (multiplier * (rotated ? previewWidth : previewHeight)),
+                        0,
+                        false);
+
+        for (final DetectResult recognition : detectResultList) {
+
+            Log.e(TAG, "detect title" + recognition.getTitle());
+
+
+            RectF trackedPos = recognition.getLocation();
+            frameToCanvasMatrix.mapRect(trackedPos);
+            final float cornerSize = Math.min(trackedPos.width(), trackedPos.height()) / 8.0f;
+            canvas.drawRoundRect(trackedPos, cornerSize, cornerSize, boxPaint);
+
+            final String labelString =
+                    !TextUtils.isEmpty(recognition.getTitle())
+                            ? String.format("%s %.2f", recognition.getTitle(), recognition.getConfidence())
+                            : String.format("%.2f", recognition.getConfidence());
+            borderedText.drawText(canvas, trackedPos.left + cornerSize, trackedPos.bottom, labelString);
         }
     }
 }
