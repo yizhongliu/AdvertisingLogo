@@ -10,6 +10,7 @@ import android.os.Message;
 import android.util.Log;
 import android.view.View;
 
+import com.iview.advertisinglogo.task.TasksActivity;
 import com.iview.advertisinglogo.test.HiCameraView;
 import com.tbruyelle.rxpermissions2.Permission;
 import com.tbruyelle.rxpermissions2.RxPermissions;
@@ -58,7 +59,8 @@ public class StartActivity extends Activity {
             public boolean handleMessage(Message msg) {
                 if(msg.what == 0 ){
 
-                    Intent intent = new Intent(StartActivity.this, HiCameraView.class);
+             //       Intent intent = new Intent(StartActivity.this, HiCameraView.class);
+                    Intent intent = new Intent(StartActivity.this, TasksActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
                 }

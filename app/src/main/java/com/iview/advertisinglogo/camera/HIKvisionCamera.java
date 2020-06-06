@@ -1,7 +1,6 @@
-package com.iview.advertisinglogo;
+package com.iview.advertisinglogo.camera;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
@@ -12,6 +11,9 @@ import com.hikvision.netsdk.HCNetSDK;
 import com.hikvision.netsdk.NET_DVR_DEVICEINFO_V30;
 import com.hikvision.netsdk.NET_DVR_PREVIEWINFO;
 import com.hikvision.netsdk.RealPlayCallBack;
+import com.iview.advertisinglogo.IDataCallback;
+import com.iview.advertisinglogo.IStateCallback;
+import com.iview.advertisinglogo.camera.AdCamera;
 import com.iview.advertisinglogo.utils.ImageUtils;
 
 import org.MediaPlayer.PlayM4.Player;
@@ -22,7 +24,7 @@ import static com.hikvision.netsdk.HCNetSDK.NET_DVR_SYSHEAD;
 import static org.MediaPlayer.PlayM4.Constants.T_YV12;
 
 
-public class HIKvisionCamera extends AdCamera{
+public class HIKvisionCamera extends AdCamera {
     private final static String TAG = "HIKvisionManager";
 
     private final static int MSG_LOGIN = 0;
@@ -349,6 +351,8 @@ public class HIKvisionCamera extends AdCamera{
             }
             m_iLogID = -1;
         }
+
+        cameraState = STATE_INIT;
     }
 
     @Override

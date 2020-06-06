@@ -1,4 +1,4 @@
-package com.iview.advertisinglogo.rkdetect.Util.net;
+package com.iview.advertisinglogo.objectdetect.rkdetect.Util.net;
 
 import android.util.Log;
 

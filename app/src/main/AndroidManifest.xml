@@ -23,17 +23,18 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".MainActivity">
+
+        <activity android:name=".task.TasksActivity">
 
         </activity>
 
-        <service
-            android:name=".AdService">
-            <intent-filter>
-                <action android:name="android.intent.action.iview.AdService"/>
-            </intent-filter>
-        </service>
+        <!-- 设置页面  巡航点设置, 摄像头预览等 -->
+        <activity android:name=".setting.ManagerActivity"></activity>
+        <activity android:name=".setting.MotorSettingActivity"></activity>
+        <activity android:name=".setting.CameraViewActivity"></activity>
+        <activity android:name=".setting.SpeedSettingActivity"></activity>
 
+        <!-- 测试 -->
         <activity android:name=".test.HiCameraView">
 
         </activity>

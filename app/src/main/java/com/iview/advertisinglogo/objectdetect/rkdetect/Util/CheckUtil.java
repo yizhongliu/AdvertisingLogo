@@ -1,4 +1,4 @@
-package com.iview.advertisinglogo.rkdetect.Util;
+package com.iview.advertisinglogo.objectdetect.rkdetect.Util;
 
 import android.app.ActivityManager;
 import android.content.ComponentName;

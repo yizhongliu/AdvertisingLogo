@@ -1,8 +1,8 @@
-package com.iview.advertisinglogo.rkdetect.Util.net.TCPClient;
+package com.iview.advertisinglogo.objectdetect.rkdetect.Util.net.TCPClient;
 
 
 
-import com.iview.advertisinglogo.rkdetect.Util.bytesConversionTool;
+import com.iview.advertisinglogo.objectdetect.rkdetect.Util.bytesConversionTool;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

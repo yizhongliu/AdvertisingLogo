@@ -1,4 +1,4 @@
-package com.iview.advertisinglogo.test;
+package com.iview.advertisinglogo.setting;
 
 import android.app.Activity;
 import android.content.Context;
@@ -18,25 +18,25 @@ import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.WindowManager;
 
-import com.iview.advertisinglogo.camera.AdCamera;
-import com.iview.advertisinglogo.camera.AndroidCamera1;
-import com.iview.advertisinglogo.objectdetect.AdObjectDetect;
 import com.iview.advertisinglogo.AutoFitSurfaceView;
 import com.iview.advertisinglogo.DetectResult;
-import com.iview.advertisinglogo.camera.HIKvisionCamera;
 import com.iview.advertisinglogo.IDataCallback;
 import com.iview.advertisinglogo.IDetectCallback;
 import com.iview.advertisinglogo.IStateCallback;
 import com.iview.advertisinglogo.OverlayView;
 import com.iview.advertisinglogo.R;
+import com.iview.advertisinglogo.camera.AdCamera;
+import com.iview.advertisinglogo.camera.HIKvisionCamera;
+import com.iview.advertisinglogo.objectdetect.AdObjectDetect;
 import com.iview.advertisinglogo.objectdetect.rkdetect.RkObjectDetect;
+import com.iview.advertisinglogo.test.BorderedText;
 import com.iview.advertisinglogo.utils.ImageUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class HiCameraView extends Activity{
-    private final static String TAG = "HiCameraView";
+public class CameraViewActivity extends Activity{
+    private final static String TAG = "CameraViewActivity";
 
     private static final float TEXT_SIZE_DIP = 18;
 
@@ -55,6 +55,7 @@ public class HiCameraView extends Activity{
     AdObjectDetect objectDetect;
     DetectStateCallback detectStateCallback;
     DetectResultCallback detectResultCallback;
+    boolean bObjectDetectOpen = false;
 
     List<DetectResult> detectResultList = new ArrayList<>();
 
@@ -87,6 +88,7 @@ public class HiCameraView extends Activity{
         adCamera.close();
         adCamera.release();
 
+        bObjectDetectOpen = false;
         objectDetect.close();
         objectDetect.release();
     }
@@ -178,9 +180,8 @@ public class HiCameraView extends Activity{
     public void initCamera() {
 
         cameraStateCallback = new CameraStateCallback();
-       // adCamera = new HIKvisionCamera();
+        adCamera = new HIKvisionCamera();
       //  adCamera = new AndroidCamera2();
-        adCamera = new AndroidCamera1();
         adCamera.init(cameraStateCallback, this);
         adCamera.open();
     }
@@ -223,7 +224,9 @@ public class HiCameraView extends Activity{
         @Override
         public void onDataCallback(byte[] data, int dataType, int width, int height) {
          //   Log.e(TAG, "onDataCallbakck  dataType:" + dataType + ", width:" + width + ", height:" + height);
-            objectDetect.sendImageData(data, dataType, width, height);
+            if (bObjectDetectOpen) {
+                objectDetect.sendImageData(data, dataType, width, height);
+            }
         }
     }
 
@@ -231,7 +234,7 @@ public class HiCameraView extends Activity{
 
         @Override
         public void onOpened() {
-
+            bObjectDetectOpen = true;
         }
 
         @Override

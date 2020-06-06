@@ -1,10 +1,13 @@
-package com.iview.advertisinglogo;
+package com.iview.advertisinglogo.camera;
 
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Size;
 import android.view.SurfaceHolder;
+
+import com.iview.advertisinglogo.IDataCallback;
+import com.iview.advertisinglogo.IStateCallback;
 
 import java.util.ArrayList;
 import java.util.Collections;

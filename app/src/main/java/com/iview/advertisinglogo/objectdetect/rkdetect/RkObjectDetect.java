@@ -1,19 +1,17 @@
-package com.iview.advertisinglogo.rkdetect;
+package com.iview.advertisinglogo.objectdetect.rkdetect;
 
 import android.content.Context;
 import android.graphics.RectF;
 import android.util.Log;
 
-import com.iview.advertisinglogo.AdObjectDetect;
+import com.iview.advertisinglogo.objectdetect.AdObjectDetect;
 import com.iview.advertisinglogo.DetectResult;
 import com.iview.advertisinglogo.IDetectCallback;
 import com.iview.advertisinglogo.IStateCallback;
-import com.iview.advertisinglogo.rkdetect.Util.net.TCPClient.TCPClientCallback;
-import com.iview.advertisinglogo.rkdetect.Util.net.TCPClient.TCPClientConnect;
+import com.iview.advertisinglogo.objectdetect.rkdetect.Util.net.TCPClient.TCPClientCallback;
+import com.iview.advertisinglogo.objectdetect.rkdetect.Util.net.TCPClient.TCPClientConnect;
 import com.iview.advertisinglogo.utils.ImageUtils;
 
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -75,6 +73,16 @@ public class RkObjectDetect extends AdObjectDetect {
         super.open(detectCallback);
 
         initTcp();
+
+        stateCallback.onOpened();
+    }
+
+    @Override
+    public void close() {
+        super.close();
+
+        mBaseTcpClient.disconnect();
+        mBaseTcpClient = null;
     }
 
     private void initTcp() {
@@ -124,38 +132,47 @@ public class RkObjectDetect extends AdObjectDetect {
     @Override
     public void sendImageData(byte[] data, int dataType, int width, int height) {
 
-        if (dataType == ImageUtils.YV12) {
-            //  width * height + width * height /4 + width * height / 4 = width * (height + height /2 )
-            Mat mat = new Mat(height + height / 2, width, CV_8UC1);
-            int re =  mat.put(0,0, data);
-            final Mat dst = new Mat();
-            Imgproc.cvtColor(mat , dst, Imgproc.COLOR_YUV2BGR_YV12);
+        switch (dataType) {
+            case ImageUtils.YV12:
+            case ImageUtils.NV21: {
+                //  width * height + width * height /4 + width * height / 4 = width * (height + height /2 )
+                Mat mat = new Mat(height + height / 2, width, CV_8UC1);
+                int re =  mat.put(0,0, data);
+                final Mat dst = new Mat();
 
-            imageWidth = width;
-            imageHeight = height;
-
-            Log.d(TAG, "setImage width:" + imageWidth + "imageHeight :" + imageHeight);
-
-            if (!computingDetection ||
-                    ((System.currentTimeMillis() - lastDetectTime) > 10000)) {
-
-                new Thread() {
-                    @Override
-                    public void run() {
-                        computingDetection = true;
-                        lastDetectTime = System.currentTimeMillis();
-
-                        Imgproc.resize(dst, dst, new Size(416, 416));
-                        byte[] sendData = setJpgData(dst);
-
-                        mBaseTcpClient.write(sendData);
-                    }
-                }.start();
+                if (dataType == ImageUtils.YV12) {
+                    Imgproc.cvtColor(mat , dst, Imgproc.COLOR_YUV2BGR_YV12);
+                } else if (dataType == ImageUtils.NV21) {
+                    Imgproc.cvtColor(mat , dst, Imgproc.COLOR_YUV2BGR_NV21);
+                }
 
 
+                imageWidth = width;
+                imageHeight = height;
+
+                //   Log.d(TAG, "setImage width:" + imageWidth + "imageHeight :" + imageHeight);
+
+                if (!computingDetection ||
+                        ((System.currentTimeMillis() - lastDetectTime) > 10000)) {
+
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            computingDetection = true;
+                            lastDetectTime = System.currentTimeMillis();
+
+                            Imgproc.resize(dst, dst, new Size(416, 416));
+                            byte[] sendData = setJpgData(dst);
+
+                            mBaseTcpClient.write(sendData);
+                        }
+                    }.start();
+                }
+                break;
             }
 
         }
+
     }
 
     private byte[] setJpgData(Mat mat) {

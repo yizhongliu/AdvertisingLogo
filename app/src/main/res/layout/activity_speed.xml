@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="镜子转动速度"
+        android:textSize="60sp"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="当前镜子速度:"
+            android:textSize="40sp"/>
+
+        <TextView
+            android:id="@+id/speedText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="40sp"/>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/speedlow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="低速"
+        android:textSize="40sp"/>
+
+    <Button
+        android:id="@+id/speedmiddle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="中速"
+        android:textSize="40sp"/>
+
+    <Button
+        android:id="@+id/speedhigh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="高速"
+        android:textSize="40sp"/>
+
+</LinearLayout>

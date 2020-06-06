@@ -6,12 +6,7 @@
     android:gravity="center">
 
     <com.iview.advertisinglogo.ZoomImageView
-        android:id="@+id/startImage"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <com.iview.advertisinglogo.ZoomImageView
-        android:id="@+id/indicateImage"
+        android:id="@+id/zoomImage"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 

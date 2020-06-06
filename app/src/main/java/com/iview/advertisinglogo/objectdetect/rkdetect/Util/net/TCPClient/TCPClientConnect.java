@@ -1,4 +1,4 @@
-package com.iview.advertisinglogo.rkdetect.Util.net.TCPClient;
+package com.iview.advertisinglogo.objectdetect.rkdetect.Util.net.TCPClient;
 
 import android.util.Log;
 

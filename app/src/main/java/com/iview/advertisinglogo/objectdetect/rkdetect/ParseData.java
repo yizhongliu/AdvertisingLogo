@@ -1,9 +1,9 @@
-package com.iview.advertisinglogo.rkdetect;
+package com.iview.advertisinglogo.objectdetect.rkdetect;
 
 import android.util.Log;
 
 
-import com.iview.advertisinglogo.rkdetect.Util.bytesConversionTool;
+import com.iview.advertisinglogo.objectdetect.rkdetect.Util.bytesConversionTool;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

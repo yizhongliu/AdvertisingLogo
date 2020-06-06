@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center">
+
+<!--    <ListView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textSize="40dp">
+
+    </ListView>-->
+
+    <TextView
+        android:id="@+id/versionText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="60sp"/>
+
+    <Button
+        android:id="@+id/motorSettingButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="巡航点设置"
+        android:textSize="30dp"/>
+
+    <Button
+        android:id="@+id/imageSwitchButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="图片切换"
+        android:textSize="30dp"
+        android:visibility="invisible"/>
+
+    <Button
+        android:id="@+id/speedSettingButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="速度切换"
+        android:textSize="30dp"/>
+
+    <Button
+        android:id="@+id/surfaceSwitchButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="显示surface"
+        android:textSize="30dp"/>
+
+    <Button
+        android:id="@+id/scaleButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="缩放系数"
+        android:textSize="30dp"
+        android:visibility="invisible"/>
+
+    <Button
+        android:id="@+id/imageRotateButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="图片旋转"
+        android:textSize="30dp"
+        android:visibility="invisible"/>
+
+</LinearLayout>

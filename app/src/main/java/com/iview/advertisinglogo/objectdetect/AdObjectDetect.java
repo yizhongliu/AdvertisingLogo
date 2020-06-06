@@ -1,6 +1,9 @@
-package com.iview.advertisinglogo;
+package com.iview.advertisinglogo.objectdetect;
 
 import android.content.Context;
+
+import com.iview.advertisinglogo.IDetectCallback;
+import com.iview.advertisinglogo.IStateCallback;
 
 public class AdObjectDetect {
 
