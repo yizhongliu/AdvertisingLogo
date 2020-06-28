@@ -85,7 +85,7 @@ public class StartActivity extends Activity {
 
                             //因为算力棒是在接到开机广播后进行配置的
                             //这个应用也是监听开机广播启动的,所以需要延时2s等算力棒配置完后才启动逻辑
-                            handler.sendEmptyMessageDelayed(0,2000);
+                            handler.sendEmptyMessageDelayed(0,5000);
 
                         } else if (permission.shouldShowRequestPermissionRationale) {
                             // 用户拒绝了该权限，没有选中『不再询问』（Never ask again）,那么下次再次启动时，还会提示请求权限的对话框

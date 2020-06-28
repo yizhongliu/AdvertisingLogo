@@ -22,6 +22,13 @@ public class MotorManager {
     public static final int MSG_MOTOR_MOVE_POINT_A2B = 3;
     public static final int MSG_MOTOR_MOVE_POINT_B2A = 4;
 
+    public static final int MSG_MOTOR_MOVE_POINT_A2C = 5;
+    public static final int MSG_MOTOR_MOVE_POINT_C2D = 6;
+
+    public static final int MSG_MOTOR_MOVE_POINT_D2C = 7;
+    public static final int MSG_MOTOR_MOVE_POINT_C2A = 8;
+    public static final int MSG_MOTOR_MOVE_POINT_D2A = 9;
+
 
 
     public static final int STATE_INIT = 0;
@@ -29,6 +36,9 @@ public class MotorManager {
     public static final int STATE_POINTB = 2;
     public static final int STATE_RUNNING_A2B = 3;
     public static final int STATE_RUNNING_B2A = 4;
+
+    public static final int STATE_POINTC = 5;
+    public static final int STATE_POINTD = 6;
 
     private static final int VDELAY = 100;
     private static final int CHECK_PERSON_TIME = 100;
@@ -40,11 +50,18 @@ public class MotorManager {
     private CommonManager commonManager;
     private CommonListener commonListener;
 
+    //两个点的情况 A, B
     private final static int[] POINT_A = {124800, 5100}; // 第一个水平马达默认值, 的二个垂直马达默认值
     private final static int[] POINT_B = {124800, 38000}; // 第一个水平马达默认值, 的二个垂直马达默认值
 
+    //三个点的情况 A,C,D
+    private final static int[] POINT_C = {124800, 38000};
+    private final static int[] POINT_D = {80000, 38000};
+
     int[] pointA = new int[2];
     int[] pointB = new int[2];
+    int[] pointC = new int[2];
+    int[] pointD = new int[2];
 
     private HandlerThread mHandlerThread;
     private Handler mHandler;
@@ -92,6 +109,7 @@ public class MotorManager {
             bServiceConnect = true;
             Log.e(TAG, "onServiceConnect");
 
+            commonManager.setProjectorMode(1);
             executeMotorMove();
         }
 
@@ -138,6 +156,8 @@ public class MotorManager {
 
                         pointA = getSharePointA();
                         pointB = getSharePointB();
+                        pointC = getSharePointC();
+                        pointD = getSharePointD();
 
                         Log.e(TAG, "pointA h:" + pointA[0] + " , v:" + pointA[1]);
                         Log.e(TAG, "pointB h:" + pointB[0] + " , v:" + pointB[1]);
@@ -222,6 +242,22 @@ public class MotorManager {
                             setMotorRunningState(STATE_RUNNING_B2A);
                         }
                         break;
+
+                    case MSG_MOTOR_MOVE_POINT_A2C:
+                        moveMotorA2C();
+                        break;
+                    case MSG_MOTOR_MOVE_POINT_C2D:
+                        moveMotorC2D();
+                        break;
+                    case MSG_MOTOR_MOVE_POINT_D2C:
+                        moveMotorA2B();
+                        break;
+                    case MSG_MOTOR_MOVE_POINT_C2A:
+                        moveMotorA2B();
+                        break;
+                    case MSG_MOTOR_MOVE_POINT_D2A:
+                        moveMotorD2A();
+                        break;
                 }
             }
         };
@@ -242,6 +278,24 @@ public class MotorManager {
         SharedPreferences sharedPreferences = context.getSharedPreferences("motorData", Context.MODE_PRIVATE);
         int hsteps = sharedPreferences.getInt("pointBHstep", POINT_B[0]);
         int vsteps = sharedPreferences.getInt("pointBVstep", POINT_B[1]);
+
+        int[] ret = {hsteps, vsteps};
+        return ret;
+    }
+
+    private int[] getSharePointC() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("motorData", Context.MODE_PRIVATE);
+        int hsteps = sharedPreferences.getInt("pointCHstep", POINT_C[0]);
+        int vsteps = sharedPreferences.getInt("pointCVstep", POINT_C[1]);
+
+        int[] ret = {hsteps, vsteps};
+        return ret;
+    }
+
+    private int[] getSharePointD() {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("motorData", Context.MODE_PRIVATE);
+        int hsteps = sharedPreferences.getInt("pointDHstep", POINT_D[0]);
+        int vsteps = sharedPreferences.getInt("pointDVstep", POINT_D[1]);
 
         int[] ret = {hsteps, vsteps};
         return ret;
@@ -398,6 +452,58 @@ public class MotorManager {
         }
 
         setMotorRunningState(STATE_POINTA);
+    }
+
+    private void moveMotorA2C() {
+        runTwoPointRouting(pointA, pointC);
+        setMotorRunningState(STATE_POINTC);
+    }
+
+    private void moveMotorC2D() {
+        runTwoPointRouting(pointC, pointD);
+        setMotorRunningState(STATE_POINTD);
+    }
+
+    private void moveMotorD2A() {
+        runTwoPointRouting(pointD, pointA);
+        setMotorRunningState(STATE_POINTA);
+    }
+
+    public void runTwoPointRouting(int[] src, int[] dst) {
+        int dir;
+        int vSteps;
+        int hSteps;
+
+        Log.e(TAG, "pointsrc h:" + src[0] + " , v:" + src[1]);
+        Log.e(TAG, "pointdst h:" + dst[0] + " , v:" + dst[1]);
+        if (src[1] != dst[1]) {
+            //判断垂直马达
+            if (src[1] > dst[1]) {
+                dir = CommonManager.VMotorDownDirection;
+            } else  {
+                dir = CommonManager.VMotorUpDirection;
+            }
+
+            vSteps = Math.abs(dst[1] - src[1]);
+            //bVMotorRunning = true;
+            Log.e(TAG, "pointA move v steps:" + vSteps + ",dir:" + dir);
+            commonManager.controlMotor(CommonManager.VMotor, vSteps, dir, vSpeed, false);
+
+        }
+
+        if (src[0] != dst[0]) {
+            if (src[0] > dst[0]) {
+                dir = CommonManager.HMotorLeftDirection;
+            } else  {
+                dir = CommonManager.HMotorRightDirection;
+            }
+
+            hSteps = Math.abs(dst[0] - src[0]);
+
+            //bHMotorRunning = true;
+            Log.e(TAG, "pointB move h steps:" + hSteps + ",dir:" + dir);
+            commonManager.controlMotor(CommonManager.HMotor, hSteps, dir, hSpeed, false);
+        }
     }
 
     public void switchProjector(int enable) {

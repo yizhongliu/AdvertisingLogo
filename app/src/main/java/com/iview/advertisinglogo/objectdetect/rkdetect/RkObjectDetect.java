@@ -163,8 +163,10 @@ public class RkObjectDetect extends AdObjectDetect {
 
                             Imgproc.resize(dst, dst, new Size(416, 416));
                             byte[] sendData = setJpgData(dst);
+                            if (mBaseTcpClient != null) {
+                                mBaseTcpClient.write(sendData);
+                            }
 
-                            mBaseTcpClient.write(sendData);
                         }
                     }.start();
                 }

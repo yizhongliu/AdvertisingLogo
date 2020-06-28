@@ -197,9 +197,11 @@ public class HIKvisionCamera extends AdCamera {
                              int nHeight, int nFrameTime, int nDataType, int Reserved) {
      //       Log.d(TAG, "on Decode: width:" + nWidth + ", height:" + nHeight);
             //yv12 image arranged in “Y0-Y1-......””V0-V1....””U0-U1-.....” format
-            if (nDataType == T_YV12) {
-                if (dataCallback != null) {
-                    dataCallback.onDataCallback(data, ImageUtils.YV12, nWidth, nHeight);
+            synchronized (this) {
+                if (nDataType == T_YV12) {
+                    if (dataCallback != null) {
+                        dataCallback.onDataCallback(data, ImageUtils.YV12, nWidth, nHeight);
+                    }
                 }
             }
         }
@@ -247,64 +249,70 @@ public class HIKvisionCamera extends AdCamera {
 
     @Override
     public void startPreview(IDataCallback callback) {
-        super.startPreview(callback);
+        synchronized (this) {
+            super.startPreview(callback);
 
-        if (cameraState != STATE_OPEN) {
-            stateCallback.onError(ERROR_STATE_ILLEGAL);
-            return;
+            if (cameraState != STATE_OPEN) {
+                stateCallback.onError(ERROR_STATE_ILLEGAL);
+                return;
+            }
+
+            if (m_iPlaybackID >= 0) {
+                Log.i(TAG, "Please stop palyback first");
+                return;
+            }
+
+            Log.i(TAG, "m_iStartChan:" + m_iStartChan);
+
+            NET_DVR_PREVIEWINFO previewInfo = new NET_DVR_PREVIEWINFO();
+            previewInfo.lChannel = m_iStartChan;
+            previewInfo.dwStreamType = 0; // substream
+            previewInfo.bBlocked = 1;
+            previewInfo.hHwnd = holder;
+            previewInfo.byPreviewMode = 0;
+
+            // HCNetSDK start preview
+            // preview数据交由 海康播放器解码netRealPlayCallBack)
+            m_iPlayID = HCNetSDK.getInstance().NET_DVR_RealPlay_V40(m_iLogID,
+                    previewInfo, netRealPlayCallBack);
+            if (m_iPlayID < 0) {
+                Log.e(TAG, "NET_DVR_RealPlay is failed!Err:"
+                        + HCNetSDK.getInstance().NET_DVR_GetLastError());
+                return;
+            }
+
+            cameraState = STATE_PREVIEW;
+
+            Log.i(TAG,"NetSdk Play sucess ***********************3***************************");
         }
-
-        if (m_iPlaybackID >= 0) {
-            Log.i(TAG, "Please stop palyback first");
-            return;
-        }
-
-        Log.i(TAG, "m_iStartChan:" + m_iStartChan);
-
-        NET_DVR_PREVIEWINFO previewInfo = new NET_DVR_PREVIEWINFO();
-        previewInfo.lChannel = m_iStartChan;
-        previewInfo.dwStreamType = 0; // substream
-        previewInfo.bBlocked = 1;
-        previewInfo.hHwnd = holder;
-        previewInfo.byPreviewMode = 0;
-
-        // HCNetSDK start preview
-        // preview数据交由 海康播放器解码netRealPlayCallBack)
-        m_iPlayID = HCNetSDK.getInstance().NET_DVR_RealPlay_V40(m_iLogID,
-                previewInfo, netRealPlayCallBack);
-        if (m_iPlayID < 0) {
-            Log.e(TAG, "NET_DVR_RealPlay is failed!Err:"
-                    + HCNetSDK.getInstance().NET_DVR_GetLastError());
-            return;
-        }
-
-        cameraState = STATE_PREVIEW;
-
-        Log.i(TAG,"NetSdk Play sucess ***********************3***************************");
     }
 
     @Override
     public void stopPreview() {
-        if (cameraState != STATE_PREVIEW) {
-            stateCallback.onError(ERROR_STATE_ILLEGAL);
-            return;
+        synchronized (this) {
+            super.stopPreview();
+
+            if (cameraState != STATE_PREVIEW) {
+                stateCallback.onError(ERROR_STATE_ILLEGAL);
+                return;
+            }
+
+            if (m_iPlayID < 0) {
+                Log.e(TAG, "m_iPlayID < 0");
+                return;
+            }
+
+            // net sdk stop preview
+            if (!HCNetSDK.getInstance().NET_DVR_StopRealPlay(m_iPlayID)) {
+                Log.e(TAG, "StopRealPlay is failed!Err:"
+                        + HCNetSDK.getInstance().NET_DVR_GetLastError());
+                return;
+            }
+
+            m_iPlayID = -1;
+
+            cameraState = STATE_OPEN;
         }
-
-        if (m_iPlayID < 0) {
-            Log.e(TAG, "m_iPlayID < 0");
-            return;
-        }
-
-        // net sdk stop preview
-        if (!HCNetSDK.getInstance().NET_DVR_StopRealPlay(m_iPlayID)) {
-            Log.e(TAG, "StopRealPlay is failed!Err:"
-                    + HCNetSDK.getInstance().NET_DVR_GetLastError());
-            return;
-        }
-
-        m_iPlayID = -1;
-
-        cameraState = STATE_OPEN;
     }
 
 

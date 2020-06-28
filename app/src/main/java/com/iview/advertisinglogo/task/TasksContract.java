@@ -7,9 +7,9 @@ import com.iview.advertisinglogo.base.BaseView;
 
 public interface TasksContract {
     interface View extends BaseView<Presenter> {
-        void showAdvertisngImage();
-        void showIndicateImage();
-        void showProductImage();
+        void showAdvertisngImage(boolean bRotate);
+        void showIndicateImage(float angle, boolean stepNext);
+        void showProductImage(boolean bRotate);
     }
 
     interface Presenter extends BasePresenter {
@@ -21,6 +21,11 @@ public interface TasksContract {
 
         void runForward();
         void runBackward();
+
+        void runFRouting1();
+        void runFRouting2();
+        void runBRouting1();
+        void runBRouting2();
 
         boolean isTaskActive();
 

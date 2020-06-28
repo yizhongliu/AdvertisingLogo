@@ -35,7 +35,7 @@ public class AdvertisingTask {
     public void start() {
         Log.d(TAG, "start");
         presenter.switchProjector(MotorManager.PROJECTOR_ENABLE);
-        view.showAdvertisngImage();
+        view.showAdvertisngImage(true);
 //        step++;
 //        mHandler.sendEmptyMessageDelayed(step, 10000);
     }
@@ -48,20 +48,28 @@ public class AdvertisingTask {
 
     public void runStep1() {
         Log.d(TAG, "runStep1");
-        view.showIndicateImage();
+        view.showIndicateImage(270f, true);
     }
 
     public void runStep2() {
         Log.d(TAG, "runStep2");
-        presenter.runForward();
+      //  presenter.runForward();
+        presenter.runFRouting1();
     }
+
     public void runStep3() {
         Log.d(TAG, "runStep3");
-        view.showProductImage();
+        view.showIndicateImage(0f, false);
+        presenter.runFRouting2();
     }
 
     public void runStep4() {
         Log.d(TAG, "runStep4");
+        view.showProductImage(true);
+    }
+
+    public void runStep5() {
+        Log.d(TAG, "runStep5");
         presenter.runBackward();
     }
 
@@ -84,6 +92,9 @@ public class AdvertisingTask {
                     break;
                 case 4:
                     runStep4();
+                    break;
+                case 5:
+                    runStep5();
                     break;
             }
         }

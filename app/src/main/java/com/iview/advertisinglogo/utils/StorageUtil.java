@@ -8,6 +8,10 @@ public class StorageUtil {
     private final static int[] POINT_A = {124800, 5100}; // 第一个水平马达默认值, 的二个垂直马达默认值
     private final static int[] POINT_B = {124800, 38000}; // 第一个水平马达默认值, 的二个垂直马达默认值
 
+    //三个点的情况 A,C,D
+    private final static int[] POINT_C = {124800, 38000};
+    private final static int[] POINT_D = {80000, 38000};
+
     public static int getImageIndex(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("motorData", Context.MODE_PRIVATE);
         int index = sharedPreferences.getInt("imageIndex", 2);
@@ -52,6 +56,24 @@ public class StorageUtil {
         SharedPreferences sharedPreferences = context.getSharedPreferences("motorData", Context.MODE_PRIVATE);
         int hsteps = sharedPreferences.getInt("pointBHstep", POINT_B[0]);
         int vsteps = sharedPreferences.getInt("pointBVstep", POINT_B[1]);
+
+        int[] ret = {hsteps, vsteps};
+        return ret;
+    }
+
+    public static int[] getSharePointC(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("motorData", Context.MODE_PRIVATE);
+        int hsteps = sharedPreferences.getInt("pointCHstep", POINT_A[0]);
+        int vsteps = sharedPreferences.getInt("pointCVstep", POINT_A[1]);
+
+        int[] ret = {hsteps, vsteps};
+        return ret;
+    }
+
+    public static int[] getSharePointD(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences("motorData", Context.MODE_PRIVATE);
+        int hsteps = sharedPreferences.getInt("pointDHstep", POINT_B[0]);
+        int vsteps = sharedPreferences.getInt("pointDVstep", POINT_B[1]);
 
         int[] ret = {hsteps, vsteps};
         return ret;

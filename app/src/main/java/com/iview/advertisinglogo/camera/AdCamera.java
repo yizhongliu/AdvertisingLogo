@@ -74,6 +74,7 @@ public class AdCamera {
     }
 
     public void stopPreview() {
+        dataCallback = null;
     }
 
     public void setSurface(SurfaceHolder holder) {

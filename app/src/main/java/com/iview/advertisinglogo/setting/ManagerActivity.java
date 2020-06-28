@@ -81,7 +81,8 @@ public class ManagerActivity extends Activity implements View.OnClickListener, V
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.motorSettingButton:
-                Intent intent = new Intent(this, MotorSettingActivity.class);
+           //     Intent intent = new Intent(this, MotorSettingActivity.class);
+                Intent intent = new Intent(this, MotorSetting3PActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
                 break;

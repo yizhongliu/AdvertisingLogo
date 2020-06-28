@@ -21,6 +21,9 @@ import java.util.List;
 public class TasksPresenter implements TasksContract.Presenter {
     private final static String TAG = "TasksPresente";
 
+    private final static int CASE_TWO_POINT = 0;
+    private final static int CASE_THREE_POINT = 1;
+
     private TasksContract.View view;
     private Context context;
 
@@ -41,6 +44,8 @@ public class TasksPresenter implements TasksContract.Presenter {
 
     boolean bTaskRunning = false;
     AdvertisingTask advertisingTask;
+
+    int runningCase = CASE_THREE_POINT;
 
     public TasksPresenter(TasksContract.View view) {
         this.view = view;
@@ -91,7 +96,34 @@ public class TasksPresenter implements TasksContract.Presenter {
 
     @Override
     public void runBackward() {
-        motorManager.sendHandleMsg(MotorManager.MSG_MOTOR_MOVE_POINT_B2A);
+        switch (runningCase) {
+            case CASE_TWO_POINT:
+                motorManager.sendHandleMsg(MotorManager.MSG_MOTOR_MOVE_POINT_B2A);
+                break;
+            case CASE_THREE_POINT:
+                motorManager.sendHandleMsg(MotorManager.MSG_MOTOR_MOVE_POINT_D2A);
+                break;
+        }
+    }
+
+    @Override
+    public void runFRouting1() {
+        motorManager.sendHandleMsg(MotorManager.MSG_MOTOR_MOVE_POINT_A2C);
+    }
+
+    @Override
+    public void runFRouting2() {
+        motorManager.sendHandleMsg(MotorManager.MSG_MOTOR_MOVE_POINT_C2D);
+    }
+
+    @Override
+    public void runBRouting1() {
+
+    }
+
+    @Override
+    public void runBRouting2() {
+
     }
 
     @Override
@@ -229,6 +261,16 @@ public class TasksPresenter implements TasksContract.Presenter {
                 break;
 
                 case MotorManager.STATE_POINTB: {
+                    advertisingTask.runNextStep();
+                }
+                break;
+
+                case MotorManager.STATE_POINTC: {
+                    advertisingTask.runNextStep();
+                }
+                break;
+
+                case MotorManager.STATE_POINTD: {
                     advertisingTask.runNextStep();
                 }
                 break;
